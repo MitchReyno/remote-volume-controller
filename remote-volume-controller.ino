@@ -45,7 +45,6 @@ boolean rotClkLastState = LOW;
 
 void setup() {
   Serial.begin(9600);
-
   Serial.println("Starting setup");
   Wire.setClock(100000);
   Serial.println("Clock set to 100000");
@@ -55,43 +54,27 @@ void setup() {
   digitalWrite(ROT_DT_PIN, HIGH);
   digitalWrite(ROT_CLK_PIN, HIGH);
   digitalWrite(BUTTON_PIN, HIGH);
-  
   Serial.println("Rotary encoder pin setup complete");
   irrecv.enableIRIn();
   SPI.begin();
-  
   Serial.println("SPI enabled");
-
   alpha4.begin(0x70);  // pass in the address
   alpha4.clear();
   alpha4.writeDisplay();
-
-  char message[] = "AH SHIT, HERE WE GO AGAIN...";
-  printTickerMessage(message, sizeof(message));
-
-  char init_message[] = "   1";
-  printShortMessage(init_message);
-  delay(200);
-  char init_message2[] = "  2 ";
-  printShortMessage(init_message2);
-  delay(200);
-  char init_message3[] = " 3  ";
-  printShortMessage(init_message3);
-  delay(200);
-  char init_message4[] = "4   ";
-  printShortMessage(init_message4);
-  delay(200);
-
   Serial.println("Display setup completed");
-
   if (!pt2258.init()) {
     Serial.println("PT2258 Successfully Initiated");
   } else {
     Serial.println("Failed to Initiate PT2258");
   }
-  
+
+  printTickerMessage("AH SHIT, HERE WE GO AGAIN...", 50);
+  printShortMessage("   1", 200);
+  printShortMessage("  2 ", 200);
+  printShortMessage(" 3  ", 200);
+  printShortMessage("4   ", 200);
+  printTickerMessage("READY!", 200);
   updateVolume();
-  
   Serial.println("Finished setup");
 }
 
@@ -172,7 +155,7 @@ void updateVolume() {
   pt2258.setChannelVolume(vol_to_write,1);
   if (muted) {
     char message[] = "Mute";
-    printShortMessage(message);
+    printShortMessage(message, 0);
   } else {
     printInteger(volume);
   }
@@ -197,8 +180,9 @@ int convertRegularVolumeToOutputVolume(int reg_vol) {
   return vol_result;
 }
 
-void printTickerMessage(char message[], int message_size) {
+void printTickerMessage(char message[], int time_interval) {
   char displaybuffer[] = "    ";
+  int message_size = strlen(message);
   for (int i = 0; i < message_size + 3; i++) {
     displaybuffer[0] = displaybuffer[1];
     displaybuffer[1] = displaybuffer[2];
@@ -213,7 +197,7 @@ void printTickerMessage(char message[], int message_size) {
     alpha4.writeDigitAscii(2, displaybuffer[2], displaybuffer[2] == '.');
     alpha4.writeDigitAscii(3, displaybuffer[3], displaybuffer[3] == '.');
     alpha4.writeDisplay();
-    delay(50);
+    delay(time_interval);
   }
   alpha4.clear();
   alpha4.writeDisplay();
@@ -221,13 +205,15 @@ void printTickerMessage(char message[], int message_size) {
   
 }
 
-void printShortMessage(char message[]) {
+void printShortMessage(char message[], int delay_ms) {
   alpha4.clear();
-  for (int i = 0; i < 4; i++) {
+  int message_len = strlen(message);
+  for (int i = 0; i < 4 && i < message_len; i++) {
     alpha4.writeDigitAscii(i, message[i]);
   }
   alpha4.writeDisplay();
   last_display_write = millis();
+  delay(delay_ms);
 }
 
 void printInteger(int number) {
